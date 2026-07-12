@@ -1,0 +1,47 @@
+section[data-testid="stSidebar"] {
+    background-color: #13294B;
+}
+
+section[data-testid="stSidebar"] * {
+    color: white !important;
+}
+
+.stButton>button {
+    background-color: #13294B;
+    color: white;
+    border-radius: 10px;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 600;
+}
+
+.stButton>button:hover {
+    background-color: #1B3A66;
+}
+
+h1 {
+    color: #111827;
+}
+
+div[data-testid="stMetric"] {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+}
+/* Dashboard Cards */
+div[data-testid="stMetric"] {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    text-align: left;
+}
+
+/* Main Background */
+.main .block-container{
+    padding-top:2rem;
+    padding-left:2rem;
+    padding-right:2rem;
+}
