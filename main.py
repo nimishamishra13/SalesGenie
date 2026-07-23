@@ -6,7 +6,7 @@ from database import models
 from modules.module1_leads import router as leads_router
 
 # Module 2 (Company Intelligence + Lead Scoring)
-from modules.module2_intelligence import router as intelligence_router
+#from modules.module2_intelligence import router as intelligence_router
 
 app = FastAPI()
 
@@ -17,4 +17,4 @@ Base.metadata.create_all(bind=engine)
 app.include_router(leads_router)
 
 # Include Module 2 (VERY IMPORTANT for fixing 404)
-app.include_router(intelligence_router)
+#app.include_router(intelligence_router)
