@@ -1,7 +1,16 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import sys
+import os
 
+sys.path.append(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..")
+    )
+)
+from ai.ai_analysis import analyze_lead
+from views.ai_panel import show_ai_analysis
 # ==========================================================
 # SAMPLE DATA
 # ==========================================================
@@ -197,7 +206,54 @@ def show_charts(prospects):
             fig,
             use_container_width=True
         )
+@st.dialog("✏️ Edit Prospect")
+def edit_prospect_dialog(p):
 
+    company = st.text_input("🏢 Company", value=p["company"])
+    industry = st.text_input("🏭 Industry", value=p["industry"])
+    location = st.text_input("📍 Location", value=p["location"])
+    website = st.text_input("🌐 Website", value=p["website"])
+
+    contact = st.text_input("👤 Contact", value=p["contact"])
+    designation = st.text_input("💼 Designation", value=p["designation"])
+    email = st.text_input("📧 Email", value=p["email"])
+    phone = st.text_input("📞 Phone", value=p["phone"])
+
+    notes = st.text_area(
+        "📝 Notes",
+        value=p["notes"],
+        height=120
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("💾 Save Changes", use_container_width=True):
+
+            response = requests.put(
+                f"http://127.0.0.1:8000/leads/{p['id']}",
+                json={
+                    "company": company,
+                    "contact": contact,
+                    "designation": designation,
+                    "email": email,
+                    "phone": phone,
+                    "website": website,
+                    "location": location,
+                    "industry": industry,
+                    "notes": notes
+                }
+            )
+
+            if response.status_code == 200:
+                st.success("Lead updated successfully!")
+                st.rerun()
+            else:
+                st.error("Update failed.")
+
+    with col2:
+        if st.button("Cancel", use_container_width=True):
+            st.rerun()
 
 # ==========================================================
 # MAIN PAGE
@@ -210,7 +266,9 @@ def show_leads():
         prospects = response.json()
     except Exception as e:
         st.error(f"Backend not running: {e}")
-        prospects = []    # ==========================================================
+        prospects = [] 
+        
+       # ==========================================================
 # PROSPECT DETAILS PAGE
 # ==========================================================
 
@@ -326,51 +384,7 @@ def show_leads():
 
         with ai:
 
-            st.success(
-                "### 🤖 AI Recommendation\n"
-                "This prospect has high buying intent."
-            )
-
-            c1, c2 = st.columns(2)
-
-            with c1:
-
-                st.metric(
-                    "Buying Intent",
-                    "Very High"
-                )
-
-                st.metric(
-                    "Deal Probability",
-                    "91%"
-                )
-
-            with c2:
-
-                st.metric(
-                    "AI Confidence",
-                    "95%"
-                )
-
-                st.metric(
-                    "Next Action",
-                    "Email Demo"
-                )
-
-            st.info(
-                """
-    ### AI Summary
-
-    • Company is actively investing in AI.
-
-    • Strong digital transformation initiatives.
-
-    • High probability of enterprise conversion.
-
-    • Recommend scheduling a product demonstration.
-    """
-            )
-
+            show_ai_analysis(p)
         # ======================================================
 
         with activity:
@@ -458,42 +472,47 @@ def show_leads():
 
         if search.lower() in p["company"].lower():
             filtered.append(p)
-
+        
 
     # ==========================================================
     # AI Recommendation Panel
     # ==========================================================
 
-    recommendation = st.container(border=True)
+    highest = max(filtered, key=lambda x: x["score"]) if filtered else None
 
-    with recommendation:
+    if highest:
+        st.markdown(
+            f"""
+            ### 🤖 AI Recommendation
+            **{highest['company']}**
+            Highest Lead Score
+            Recommendation:
+            ✔ Prioritize outreach this week.
+            """
+        )
 
-        st.markdown("### 🤖 AI Recommendation")
+        st.progress(highest["score"]/100)
 
-        highest = max(filtered,key=lambda x:x["score"]) if filtered else None
-
-        if highest:
-
-            st.success(
-                f"""
-    **{highest['company']}**
-
-    Highest Lead Score
-
-    Recommendation:
-
-    ✔ Prioritize outreach this week.
-    """
-            )
-
-            st.progress(highest["score"]/100)
-
-            st.caption(
-                f"Confidence: {highest['score']}%"
-            )
+        st.caption(
+            f"Confidence: {highest['score']}%"
+        )
 
     st.divider()
+    if st.button(
+    "🔄 Re-analyze All",
+    use_container_width=True
+    ):
 
+        response = requests.post(
+            "http://127.0.0.1:8000/leads/reanalyze"
+        )
+
+        if response.status_code == 200:
+            st.write(response.status_code)
+            st.write(response.json())
+            st.rerun()
+        else:
+            st.error("Failed to re-analyze leads.")
     # ==========================================================
     # PROSPECT CARDS
     # ==========================================================
@@ -558,12 +577,14 @@ def show_leads():
                     st.session_state.selected_prospect = lead
 
                     st.rerun()
-
-            st.markdown("---")
+                if st.button("✏️ Edit", key=f"edit_{p['id']}"):
+                    edit_prospect_dialog(p)
+                
+                st.markdown("---")
     # ==========================================================
     # ADD PROSPECT FORM
     # ==========================================================
-
+    
     if st.session_state.get("show_form", False):
 
         st.divider()
@@ -628,30 +649,6 @@ def show_leads():
                     placeholder="Add important notes about this prospect..."
                 )
 
-                st.markdown("### 🤖 AI Generated Lead Score")
-
-                score = st.slider(
-                    "",
-                    min_value=50,
-                    max_value=100,
-                    value=75
-                )
-
-                status = "Cold"
-
-                if score >= 90:
-                    status = "Hot"
-
-                elif score >= 75:
-                    status = "Warm"
-
-                else:
-                    status = "Cold"
-
-                status_badge(status)
-
-                st.divider()
-
                 save_col, cancel_col = st.columns(2)
 
                 with save_col:
@@ -689,8 +686,6 @@ def show_leads():
                                 "website": website,
                                 "location": location,
                                 "industry": industry,
-                                "score": score,
-                                "status": status,
                                 "notes": notes
                             }
                         )

@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-
-
+from modules.module2_intelligence import analyze_and_score_lead
 from database.connection import SessionLocal
 from database.models import Lead
 
@@ -19,12 +18,23 @@ def get_db():
     finally:
         db.close()
 
-
 # ------------------------
 # CREATE LEAD
 # ------------------------
 @router.post("/")
 def create_lead(data: dict, db: Session = Depends(get_db)):
+    ai_result = analyze_and_score_lead(data)
+    status = ai_result["status"]
+    analysis = ai_result["analysis"]
+    score = ai_result["score"]
+
+    if score >= 90:
+        status = "Hot"
+    elif score >= 75:
+        status = "Warm"
+    else:
+        status = "Cold"
+
     new_lead = Lead(
         company=data.get("company"),
         contact=data.get("contact"),
@@ -34,8 +44,8 @@ def create_lead(data: dict, db: Session = Depends(get_db)):
         website=data.get("website"),
         location=data.get("location"),
         industry=data.get("industry"),
-        score=data.get("score"),
-        status=data.get("status"),
+        score=score,
+        status=status,
         notes=data.get("notes"),
     )
 
@@ -46,6 +56,7 @@ def create_lead(data: dict, db: Session = Depends(get_db)):
     return {
         "message": "Lead created successfully",
         "lead": new_lead,
+        "ai_analysis": ai_result
     }
 
 # ------------------------
@@ -90,7 +101,20 @@ def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db)):
     lead.score = data.get("score", lead.score)
     lead.status = data.get("status", lead.status)
     lead.notes = data.get("notes", lead.notes)
+    ai = analyze_and_score_lead({
+        "company": lead.company,
+        "contact": lead.contact,
+        "designation": lead.designation,
+        "email": lead.email,
+        "phone": lead.phone,
+        "website": lead.website,
+        "location": lead.location,
+        "industry": lead.industry,
+        "notes": lead.notes,
+    })
 
+    lead.score = ai["score"]
+    lead.status = ai["status"]
     db.commit()
     db.refresh(lead)
 
@@ -98,7 +122,33 @@ def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db)):
         "message": "Lead updated successfully",
         "lead": lead,
     }
+@router.post("/reanalyze")
+def reanalyze_all_leads(db: Session = Depends(get_db)):
 
+    leads = db.query(Lead).all()
+
+    for lead in leads:
+
+        ai = analyze_and_score_lead({
+            "company": lead.company,
+            "contact": lead.contact,
+            "designation": lead.designation,
+            "email": lead.email,
+            "phone": lead.phone,
+            "website": lead.website,
+            "location": lead.location,
+            "industry": lead.industry,
+            "notes": lead.notes,
+        })
+
+        lead.score = ai["score"]
+        lead.status = ai["status"]
+
+    db.commit()
+
+    return {
+        "message": f"{len(leads)} leads re-analyzed successfully."
+    }
 
 # ------------------------
 # DELETE LEAD
