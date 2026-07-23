@@ -1,52 +1,34 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
-
-# Create router
-router = APIRouter(prefix="/intelligence", tags=["Company Intelligence"])
+from ai.ai_analysis import analyze_lead
 
 
-# =========================
-# Company Intelligence API
-# =========================
-@router.get("/analyze/{company_name}")
-def analyze_company(company_name: str):
-    return {
-        "company": company_name,
-        "insight": f"{company_name} is a growing company with strong market presence.",
-        "recommendation": "Good potential lead"
-    }
+def get_status(score):
+    if score >= 90:
+        return "Hot"
+    elif score >= 75:
+        return "Warm"
+    return "Cold"
 
 
-# =========================
-# Lead Scoring 
-# =========================
-class LeadScoreRequest(BaseModel):
-    company: str
-    status: str
+def analyze_and_score_lead(data: dict):
+    prompt = f"""
+Company: {data.get('company')}
+Industry: {data.get('industry')}
+Location: {data.get('location')}
+Website: {data.get('website')}
 
+Primary Contact: {data.get('contact')}
+Designation: {data.get('designation')}
 
-# =========================
-# Lead Scoring API
-# =========================
-@router.post("/score")
-def lead_scoring(data: LeadScoreRequest):
-    score = 0
+Additional Notes:
+{data.get('notes')}
 
-    # Simple scoring logic
-    if data.status.lower() == "new":
-        score = 50
-    elif data.status.lower() == "contacted":
-        score = 70
-    elif data.status.lower() == "qualified":
-        score = 90
-    elif data.status.lower() == "lost":
-        score = 10
-    else:
-        score = 30
+Evaluate the lead according to the scoring criteria.
+"""
+
+    result = analyze_lead(prompt)
 
     return {
-        "company": data.company,
-        "status": data.status,
-        "lead_score": score,
-        "remark": "Higher score means better conversion chance"
+        "analysis": result,
+        "score": result["lead_score"],
+        "status": get_status(result["lead_score"])
     }
