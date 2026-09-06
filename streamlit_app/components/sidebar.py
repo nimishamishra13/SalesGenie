@@ -8,7 +8,6 @@ def show_sidebar():
         st.markdown("# **SalesGenie**")
         st.caption("AI Sales Assistant")
 
-        # Show logged-in user
         user = st.session_state.get("user")
 
         if user:
@@ -29,9 +28,7 @@ def show_sidebar():
         )
 
         if page == "🚪 Logout":
-
             st.session_state.clear()
-
             st.rerun()
 
     return page

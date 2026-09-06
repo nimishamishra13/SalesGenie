@@ -10,12 +10,14 @@ from views.login import show_login
 from views.register import show_register
 from views.forgot_password import show_forgot_password
 
+
 st.set_page_config(
     page_title="SalesGenie",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 
 style_path = Path(__file__).parent / "style.css"
 
@@ -26,11 +28,13 @@ if style_path.exists():
             unsafe_allow_html=True
         )
 
+
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 
 if "auth_page" not in st.session_state:
     st.session_state["auth_page"] = "login"
+
 
 if not st.session_state["logged_in"]:
 
@@ -45,13 +49,35 @@ if not st.session_state["logged_in"]:
 
     st.stop()
 
+
 page = show_sidebar()
 
+
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "leads"
+
+
 if page == "📊 Overview":
-    show_dashboard()
+    st.session_state.current_page = "overview"
 
 elif page == "👥 Leads":
-    show_leads()
+    st.session_state.current_page = "leads"
 
 elif page == "⚙️ Settings":
+    st.session_state.current_page = "settings"
+
+elif page == "📧 Outreach":
+    st.session_state.current_page = "outreach"
+
+
+if st.session_state.current_page == "overview":
+
+    show_dashboard()
+
+elif st.session_state.current_page == "leads":
+
+    show_leads()
+
+elif st.session_state.current_page == "settings":
+
     show_settings()

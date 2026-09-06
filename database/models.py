@@ -1,5 +1,8 @@
-from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+
 from database.connection import Base
+
 
 class Lead(Base):
     __tablename__ = "leads"
@@ -27,15 +30,73 @@ class Lead(Base):
     status = Column(String)
 
     notes = Column(String)
-class User(Base):
-    __tablename__ = "users"
+
+    conversations = relationship(
+        "Conversation",
+        back_populates="lead"
+    )
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
 
     id = Column(Integer, primary_key=True, index=True)
 
-    name = Column(String, nullable=False)
+    lead_id = Column(
+        Integer,
+        ForeignKey("leads.id")
+    )
 
-    email = Column(String, unique=True, index=True, nullable=False)
+    transcript = Column(Text)
 
-    password_hash = Column(String, nullable=False)
-    failed_attempts = Column(Integer, default=0)
-    is_locked = Column(Boolean, default=False)
+    summary = Column(Text)
+
+    sentiment = Column(String)
+
+    buying_intent = Column(String)
+
+    next_action = Column(Text)
+
+    crm_notes = Column(Text)
+
+    lead = relationship(
+        "Lead",
+        back_populates="conversations"
+    )
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    name = Column(
+        String,
+        nullable=False
+    )
+
+    email = Column(
+        String,
+        unique=True,
+        index=True,
+        nullable=False
+    )
+
+    password_hash = Column(
+        String,
+        nullable=False
+    )
+
+    failed_attempts = Column(
+        Integer,
+        default=0
+    )
+
+    is_locked = Column(
+        Boolean,
+        default=False
+    )

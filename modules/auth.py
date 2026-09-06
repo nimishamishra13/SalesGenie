@@ -22,9 +22,12 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
     new_password: str
+
 
 def get_db():
     db = SessionLocal()
@@ -40,6 +43,7 @@ def register_user(
     data: RegisterRequest,
     db: Session = Depends(get_db)
 ):
+
     existing_user = (
         db.query(User)
         .filter(User.email == data.email)
@@ -119,11 +123,12 @@ def login_user(
 
         raise HTTPException(
             status_code=401,
-            detail=f"Invalid password. Remaining attempts: {5-user.failed_attempts}"
+            detail=f"Invalid password. Remaining attempts: {5 - user.failed_attempts}"
         )
 
     user.failed_attempts = 0
     user.is_locked = False
+
     db.commit()
 
     return {
@@ -134,6 +139,8 @@ def login_user(
             "email": user.email
         }
     }
+
+
 @router.post("/reset-password")
 def reset_password(
     data: ResetPasswordRequest,

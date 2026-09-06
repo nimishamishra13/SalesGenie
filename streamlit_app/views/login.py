@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 
+
 LOGIN_URL = "http://127.0.0.1:8000/auth/login"
 
 
@@ -53,7 +54,10 @@ def show_login():
 
                 elif response.status_code in (401, 403):
 
-                    st.error(response.json()["detail"])
+                    try:
+                        st.error(response.json()["detail"])
+                    except ValueError:
+                        st.error("Invalid email or password.")
 
                 else:
 
@@ -61,7 +65,9 @@ def show_login():
 
             except requests.RequestException as e:
 
-                st.error(f"Unable to connect to backend: {e}")
+                st.error(
+                    f"Unable to connect to backend: {e}"
+                )
 
     st.divider()
 
